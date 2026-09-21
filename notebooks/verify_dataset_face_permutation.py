@@ -50,7 +50,7 @@ BREPNET_DIR = PROJECT_ROOT / "external" / "BRepNet"
 sys.path.insert(0, str(BREPNET_DIR))
 
 FEATURES_DIR = PROJECT_ROOT / "outputs" / "brepnet_features"
-SUBSET_LIST = PROJECT_ROOT / "outputs" / "mfcad_subset.txt"
+SUBSET_LIST = PROJECT_ROOT / "experiments" / "500_shared_data_prep" / "mfcad_subset.txt"  # 500-scale list, matches outputs/brepnet_features/
 
 MAX_COEDGES_PER_FACE = 30  # matches BRepNetDataset.load_body's hardcoded value
 N_FILES_TO_CHECK = 500  # the full verified subset -- cheap since it only reads already-extracted npz arrays

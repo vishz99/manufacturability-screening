@@ -1,19 +1,12 @@
 """
-Runs BRepNet's feature-extraction pipeline
-(external/BRepNet/pipeline/extract_brepnet_data_from_step.py) on the
-500-file verified MFCAD subset (outputs/mfcad_subset.txt), producing one
-.npz per file with per-face/per-edge/per-coedge UV-grid features in
-outputs/brepnet_features/.
+Canonical pipeline script (reorganized -- this was extract_features_1000.py
+until the 1000-file subset became the accepted scale; the original
+500-file version now lives at experiments/500_shared_data_prep/extract_features.py).
 
-The extraction pipeline globs **/*.step under whatever directory it's
-given, so we first copy just the subset's STEP files into an isolated
-folder (outputs/brepnet_subset_step/) rather than pointing it at the
-full 15,488-file dataset directory.
-
-Verified separately (see scratch checks during this phase): the npz
-face order here matches occwl's raw traversal order exactly, which is
-the same order src/data/mfcad_loader.py's LabeledSample.labels is
-aligned to -- so no extra reordering is needed between the two.
+Runs BRepNet's feature-extraction pipeline on the 1000-file subset
+(outputs/mfcad_subset.txt), writing to outputs/brepnet_features_1000/
+(directory name kept as-is -- not renamed during the reorg, since it's
+a large regeneratable cache, not a curated result).
 
 Run with the `brepnet` conda environment's python (needs occwl/OCC):
     <path to conda>/envs/brepnet/python.exe scripts/extract_features.py
@@ -29,8 +22,8 @@ sys.path.insert(0, str(BREPNET_DIR))
 
 STEP_DIR = PROJECT_ROOT / "data" / "MFCAD" / "dataset" / "step"
 SUBSET_LIST = PROJECT_ROOT / "outputs" / "mfcad_subset.txt"
-ISOLATED_STEP_DIR = PROJECT_ROOT / "outputs" / "brepnet_subset_step"
-FEATURES_OUT_DIR = PROJECT_ROOT / "outputs" / "brepnet_features"
+ISOLATED_STEP_DIR = PROJECT_ROOT / "outputs" / "brepnet_subset_step_1000"
+FEATURES_OUT_DIR = PROJECT_ROOT / "outputs" / "brepnet_features_1000"
 FEATURE_LIST_PATH = BREPNET_DIR / "feature_lists" / "all.json"
 
 

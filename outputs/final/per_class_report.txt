@@ -1,0 +1,87 @@
+﻿python.exe : C:\Users\Vishal Prabu\anaconda3\envs\brepnet\lib\site-packages\deprecate\deprecation.py:319: 
+FutureWarning: target=None is deprecated since `v0.8`; use `TargetMode.NOTIFY` instead. Will be removed in `v1.0`.
+At line:3 char:1
++ & $py "scripts\report_per_class_stats.py" "outputs\final\mfcad_segmen ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Vishal...oved in `v1.0`.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  return _callable_pack(source, _stacklevel + 1, _is_static)  # type: ignore[call-arg, arg-type]
+C:\Users\Vishal Prabu\anaconda3\envs\brepnet\lib\site-packages\pytorch_lightning\utilities\migration\migration.py:208: 
+You have multiple `ModelCheckpoint` callback states in this checkpoint, but we found state keys that would end up 
+colliding with each other after an upgrade, which means we can't differentiate which of your checkpoint callbacks 
+needs which states. At least one of your `ModelCheckpoint` callbacks will not be able to reload the state.
+Lightning automatically upgraded your loaded checkpoint from v1.3.8 to v2.6.5. To apply the upgrade to your files 
+permanently, run `python -m pytorch_lightning.utilities.upgrade_checkpoint C:\Users\Vishal Prabu\Desktop\genai-projects
+\manufacturability-screening\external\BRepNet\example_files\pretrained_models\pretrained_s2.0.0_extended_step_uv_net_fe
+atures_0816_183419.ckpt`
+==========================================================================================
+PER-CLASS FACE COUNTS -- 1000-file verified subset (from cached training labels)
+==========================================================================================
+idx class name                      subset (1000)  train (800)  val (200)
+  0 rectangular_through_slot                  304          242         62
+  1 triangular_through_slot                   972          787        185
+  2 rectangular_passage                      1566         1286        280
+  3 triangular_passage                       2182         1835        347
+  4 6sides_passage                            576          454        122
+  5 rectangular_through_step                  966          759        207
+  6 2sides_through_step                       600          468        132
+  7 slanted_through_step                      951          747        204
+  8 rectangular_blind_step                    508          422         86
+  9 triangular_blind_step                    1196          940        256
+ 10 rectangular_blind_slot                   1610         1260        350
+ 11 rectangular_pocket                       2135         1743        392
+ 12 triangular_pocket                        1204          952        252
+ 13 6sides_pocket                             528          422        106
+ 14 chamfer                                   903          750        153
+ 15 stock                                    6610         5280       1330
+    TOTAL                                   22811        18347       4464
+
+==========================================================================================
+PER-CLASS ACCURACY -- checkpoint=mfcad_segmentation_head.pt hidden_size=128 -- val set (200 files)
+==========================================================================================
+Reconstructing model with hidden_size=128 dropout=None (from checkpoint metadata)
+Overall val accuracy: 2694/4464 = 0.6035
+
+idx class name                       n_val correct  accuracy       most common wrong pred
+  0 rectangular_through_slot            62      60    0.9677           6sides_pocket (2x)
+  1 triangular_through_slot            185      38    0.2054    rectangular_passage (82x)
+  2 rectangular_passage                280     191    0.6821 triangular_through_slot (27x)
+  3 triangular_passage                 347     163    0.4697    rectangular_passage (77x)
+  4 6sides_passage                     122      66    0.5410 rectangular_through_step (15x)
+  5 rectangular_through_step           207     143    0.6908         6sides_passage (37x)
+  6 2sides_through_step                132      48    0.3636 rectangular_blind_step (28x)
+  7 slanted_through_step               204      98    0.4804                chamfer (23x)
+  8 rectangular_blind_step              86      13    0.1512    2sides_through_step (29x)
+  9 triangular_blind_step              256     121    0.4727 rectangular_blind_slot (93x)
+ 10 rectangular_blind_slot             350     190    0.5429 triangular_blind_step (102x)
+ 11 rectangular_pocket                 392     209    0.5332  triangular_blind_step (92x)
+ 12 triangular_pocket                  252     115    0.4563                chamfer (28x)
+ 13 6sides_pocket                      106      78    0.7358    slanted_through_step (7x)
+ 14 chamfer                            153      74    0.4837   slanted_through_step (25x)
+ 15 stock                             1330    1087    0.8173    2sides_through_step (60x)
+
+Zero-recall classes (0): none
+
+==========================================================================================
+PREDICTED-CLASS DISTRIBUTION
+==========================================================================================
+idx class name                      n_true  n_predicted pred_share
+  0 rectangular_through_slot            62           95     0.0213
+  1 triangular_through_slot            185          124     0.0278
+  2 rectangular_passage                280          364     0.0815
+  3 triangular_passage                 347          213     0.0477
+  4 6sides_passage                     122          213     0.0477
+  5 rectangular_through_step           207          225     0.0504
+  6 2sides_through_step                132          171     0.0383
+  7 slanted_through_step               204          233     0.0522
+  8 rectangular_blind_step              86          115     0.0258
+  9 triangular_blind_step              256          350     0.0784
+ 10 rectangular_blind_slot             350          395     0.0885
+ 11 rectangular_pocket                 392          355     0.0795
+ 12 triangular_pocket                  252          149     0.0334
+ 13 6sides_pocket                      106          142     0.0318
+ 14 chamfer                            153          187     0.0419
+ 15 stock                             1330         1133     0.2538
+
+Classes NEVER predicted at all: none

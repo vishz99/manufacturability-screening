@@ -45,7 +45,7 @@ sys.path.insert(0, str(BREPNET_DIR))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 STEP_DIR = PROJECT_ROOT / "data" / "MFCAD" / "dataset" / "step"
-SUBSET_LIST = PROJECT_ROOT / "outputs" / "mfcad_subset.txt"
+SUBSET_LIST = PROJECT_ROOT / "experiments" / "500_shared_data_prep" / "mfcad_subset.txt"  # 500-scale list, matches outputs/brepnet_features/
 SUBSET_FEATURES_DIR = PROJECT_ROOT / "outputs" / "brepnet_features"
 FEATURE_LIST_PATH = BREPNET_DIR / "feature_lists" / "all.json"
 

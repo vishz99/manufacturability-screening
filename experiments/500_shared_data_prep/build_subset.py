@@ -1,20 +1,17 @@
 """
-Same process as scripts/build_subset.py (Phase 1), scaled from 500 to
-1000 files: draws a random, verified working subset from
-outputs/mfcad_manifest.csv (the full 15,488-file validation scan, still
-100% valid, produced by scripts/build_manifest.py), re-verifies EVERY
-chosen file with a fresh load_labeled_sample() call (count match +
-embedded-name permutation check -- the same alignment checks proven
-necessary in Phase 1, not skipped just because the process is
-known-good), and reports per-class face counts.
+HISTORICAL (500-file experiment) -- not the canonical pipeline. The
+1000-file subset is the accepted scale; see scripts/build_subset.py for
+the canonical version. This script and its output (mfcad_subset.txt in
+this same folder) are kept for reference/reproducibility of the
+500_unweighted and 500_class_weighted experiments only.
 
-Writes to a SEPARATE set of output files (mfcad_subset_1000.txt) rather
-than overwriting the 500-file subset, so the existing 500-file
-artifacts (extracted features, label cache, trained checkpoints) stay
-intact for comparison.
+Selects a random, verified working subset from outputs/mfcad_manifest.csv
+(produced by scripts/build_manifest.py) and writes the chosen file stems
+plus a per-class label-count summary next to this script.
 
-Run with the `brepnet` conda environment's python:
-    <path to conda>/envs/brepnet/python.exe scripts/build_subset_1000.py
+Run with the `brepnet` conda environment's python (needs occwl to
+re-verify labels while summarizing):
+    <path to conda>/envs/brepnet/python.exe experiments/500_shared_data_prep/build_subset.py
 """
 
 import csv
@@ -23,13 +20,13 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = PROJECT_ROOT / "outputs" / "mfcad_manifest.csv"
 DATA_DIR = PROJECT_ROOT / "data" / "MFCAD" / "dataset" / "step"
-SUBSET_OUTPUT_PATH = PROJECT_ROOT / "outputs" / "mfcad_subset_1000.txt"
+SUBSET_OUTPUT_PATH = Path(__file__).resolve().parent / "mfcad_subset.txt"
 
-SUBSET_SIZE = 1000
-RANDOM_SEED = 1  # different from the 500-file subset's seed (0) -- a fresh draw, not required to be a superset
+SUBSET_SIZE = 500
+RANDOM_SEED = 0
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from data.mfcad_loader import FEAT_NAMES, load_labeled_sample  # noqa: E402
@@ -64,13 +61,13 @@ def main():
         f.write("\n".join(subset) + "\n")
     print(f"Wrote {len(subset)} stems to {SUBSET_OUTPUT_PATH}")
 
-    # Same Phase 1 re-verification: fresh load_labeled_sample() per file
-    # (count match, embedded-STEP-name permutation check, label range
-    # check) -- not skipped, run on all 1000 files.
+    # Sanity check: re-load each subset file for real and tally per-class
+    # face-label counts, to confirm the subset actually has usable class
+    # coverage before Phase 2 training.
     class_counts = Counter()
     n_faces_total = 0
     failures = []
-    for i, stem in enumerate(subset, start=1):
+    for stem in subset:
         step_path = DATA_DIR / f"{stem}.step"
         try:
             sample = load_labeled_sample(step_path)
@@ -79,15 +76,12 @@ def main():
             continue
         n_faces_total += len(sample.labels)
         class_counts.update(sample.labels)
-        if i % 200 == 0:
-            print(f"  ...re-verified {i}/{len(subset)}...")
 
     print(f"\nRe-verified {len(subset) - len(failures)}/{len(subset)} subset files")
     if failures:
         print("UNEXPECTED failures during re-verification (manifest said OK):")
         for stem, reason in failures:
             print(f"  {stem}: {reason}")
-    assert not failures, "Re-verification failures on a manifest-OK file -- investigate before proceeding"
 
     print(f"\nTotal faces in subset: {n_faces_total}")
     print("Per-class face-label counts:")

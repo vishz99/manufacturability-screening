@@ -1,24 +1,12 @@
 """
-Precomputes and caches per-face labels for the 500-file verified MFCAD
-subset, so the training loop doesn't call mfcad_loader.load_labeled_sample()
-(which parses a STEP file via occwl -- relatively slow) fresh every epoch.
+Canonical pipeline script (reorganized -- this was cache_labels_1000.py
+until the 1000-file subset became the accepted scale; the original
+500-file version now lives at experiments/500_shared_data_prep/cache_labels.py).
 
-Cache format: one plain-text .seg file per solid, one integer label per
-line, in outputs/mfcad_labels_cache/{stem}.seg -- deliberately the SAME
-format external/BRepNet/dataloaders/brepnet_dataset.py's own
-BRepNetDataset.load_labels() already reads via np.loadtxt(). This lets
-the training Dataset/DataLoader reuse BRepNetDataset completely
-unmodified (pointing --label_dir at this cache dir) instead of
-reimplementing its already-verified face-permutation logic ourselves.
-
-The labels are written in npz/occwl-raw order -- proven in Phase 2
-(scripts/verify_extraction_face_order.py) to match the order
-BRepNetDataset expects its raw (pre-permutation) label array in, since
-that's the same order load_labels() feeds into `labels[new_to_old_face_indices]`.
-
-After caching, re-loads a random sample of cached files and compares
-against a FRESH, independent call to load_labeled_sample() to confirm
-the cache is trustworthy before it's used for training.
+Precomputes and caches per-face labels for the 1000-file subset
+(outputs/mfcad_subset.txt) into outputs/mfcad_labels_cache_1000/
+(directory name kept as-is -- not renamed during the reorg, since it's
+a large regeneratable cache with ~1000 tracked files, not a curated result).
 
 Run with the `brepnet` conda environment's python (needs occwl/OCC):
     <path to conda>/envs/brepnet/python.exe scripts/cache_labels.py
@@ -35,9 +23,9 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 STEP_DIR = PROJECT_ROOT / "data" / "MFCAD" / "dataset" / "step"
 SUBSET_LIST = PROJECT_ROOT / "outputs" / "mfcad_subset.txt"
-LABELS_CACHE_DIR = PROJECT_ROOT / "outputs" / "mfcad_labels_cache"
+LABELS_CACHE_DIR = PROJECT_ROOT / "outputs" / "mfcad_labels_cache_1000"
 
-N_FILES_TO_SPOT_CHECK = 15
+N_FILES_TO_SPOT_CHECK = 20
 SPOT_CHECK_SEED = 4
 
 
@@ -65,15 +53,12 @@ def main():
         np.savetxt(out_path, labels, fmt="%d")
         n_ok += 1
 
-        if i % 100 == 0:
+        if i % 200 == 0:
             print(f"  ...cached {i}/{len(stems)}...")
 
     print(f"\nCached {n_ok}/{len(stems)} files ({n_failed} failed)")
     assert n_failed == 0, "Some subset files failed to cache -- investigate before training"
 
-    # --- Spot-check: cached .seg files must match a FRESH, independent
-    # call to load_labeled_sample() (not reusing anything from the loop
-    # above) ---
     print(f"\nSpot-checking {N_FILES_TO_SPOT_CHECK} cached files against fresh load_labeled_sample() calls...")
     rng = random.Random(SPOT_CHECK_SEED)
     spot_stems = rng.sample(stems, N_FILES_TO_SPOT_CHECK)
@@ -89,8 +74,8 @@ def main():
 
         match = cached.shape == fresh.shape and np.array_equal(cached, fresh)
         status = "MATCH" if match else "MISMATCH"
-        print(f"  {stem}: cached={cached.tolist()} fresh={fresh.tolist()} -> {status}")
         n_match += int(match)
+        print(f"  {stem}: {status}")
 
     print(f"\nSpot check: {n_match}/{N_FILES_TO_SPOT_CHECK} cached files exactly match a fresh reload")
     assert n_match == N_FILES_TO_SPOT_CHECK, "Cache does not match fresh loader output -- do not trust this cache"

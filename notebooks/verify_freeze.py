@@ -62,7 +62,7 @@ def main():
     from dataloaders.brepnet_dataset import BRepNetDataset, brepnet_collate_fn
 
     npz_files = sorted(FEATURES_DIR.glob("*.npz"))
-    assert npz_files, f"No extracted features found in {FEATURES_DIR}. Run scripts/extract_features.py first."
+    assert npz_files, f"No extracted features found in {FEATURES_DIR}. Run experiments/500_shared_data_prep/extract_features.py first."
     stem = npz_files[0].stem
     print(f"Using extracted file: {stem}")
 

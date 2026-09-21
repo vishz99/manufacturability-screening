@@ -1,9 +1,14 @@
 """
-Continues variant B's training (outputs/mfcad_head_checkpoint_1000_B.pt,
-a plain linear head trained for 40 epochs on the 1000-file subset) for
-20 more epochs, to see whether the curve -- which was still improving
-with no overfitting signal at epoch 40 -- keeps improving, plateaus, or
-starts overfitting by epoch 60.
+HISTORICAL (1000-file, variant B continued to 60 epochs) -- not the
+canonical pipeline. See scripts/train_head.py (--suffix C --epochs 40
+--hidden-size 128 --save-best) for the accepted result. Kept for
+reference/reproducibility only.
+
+Continues variant B's training (experiments/1000_variant_B_linear_40ep/
+checkpoint.pt, a plain linear head trained for 40 epochs on the
+1000-file subset) for 20 more epochs, to see whether the curve -- which
+was still improving with no overfitting signal at epoch 40 -- keeps
+improving, plateaus, or starts overfitting by epoch 60.
 
 CAVEAT, stated plainly: we only checkpointed the head's weights after
 epoch 40, not the Adam optimizer's internal momentum/variance state, so
@@ -17,10 +22,10 @@ worth knowing when interpreting epoch 41's numbers relative to epoch 40's.
 Tracks the best val-accuracy epoch across the FULL 60-epoch run
 (comparing epoch 40's already-known val_acc against epochs 41-60) and
 saves that as a separate best checkpoint, using the same
-save-best-and-verify discipline as train_head_1000.py --save-best.
+save-best-and-verify discipline as scripts/train_head.py --save-best.
 
 Run with the `brepnet` conda environment's python:
-    <path to conda>/envs/brepnet/python.exe scripts/continue_train_head_1000_B.py
+    <path to conda>/envs/brepnet/python.exe experiments/1000_variant_B_continued_60ep/continue_train_head.py
 """
 
 import copy
@@ -34,23 +39,24 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BREPNET_DIR = PROJECT_ROOT / "external" / "BRepNet"
 sys.path.insert(0, str(BREPNET_DIR))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 FEATURES_DIR = PROJECT_ROOT / "outputs" / "brepnet_features_1000"
 LABELS_CACHE_DIR = PROJECT_ROOT / "outputs" / "mfcad_labels_cache_1000"
-SPLIT_DATASET_FILE_PATH = PROJECT_ROOT / "outputs" / "mfcad_train_val_split_1000.json"
+SPLIT_DATASET_FILE_PATH = PROJECT_ROOT / "outputs" / "mfcad_train_val_split.json"
 KERNEL_PATH = BREPNET_DIR / "kernels" / "winged_edge.json"
 INPUT_FEATURES_PATH = BREPNET_DIR / "feature_lists" / "all.json"
 
-EXISTING_CHECKPOINT_PATH = PROJECT_ROOT / "outputs" / "mfcad_head_checkpoint_1000_B.pt"
-EXISTING_HISTORY_PATH = PROJECT_ROOT / "outputs" / "mfcad_training_history_1000_B.json"
+EXISTING_CHECKPOINT_PATH = PROJECT_ROOT / "experiments" / "1000_variant_B_linear_40ep" / "checkpoint.pt"
+EXISTING_HISTORY_PATH = PROJECT_ROOT / "experiments" / "1000_variant_B_linear_40ep" / "history.json"
 
-OUT_CHECKPOINT_PATH = PROJECT_ROOT / "outputs" / "mfcad_head_checkpoint_1000_B60.pt"
-OUT_BEST_CHECKPOINT_PATH = PROJECT_ROOT / "outputs" / "mfcad_head_checkpoint_1000_B60_best.pt"
-OUT_HISTORY_PATH = PROJECT_ROOT / "outputs" / "mfcad_training_history_1000_B60.json"
+_THIS_DIR = Path(__file__).resolve().parent
+OUT_CHECKPOINT_PATH = _THIS_DIR / "checkpoint_final_ep60.pt"
+OUT_BEST_CHECKPOINT_PATH = _THIS_DIR / "checkpoint_best_ep59.pt"
+OUT_HISTORY_PATH = _THIS_DIR / "history.json"
 
 NUM_MFCAD_CLASSES = 16
 BATCH_SIZE = 16

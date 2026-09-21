@@ -1,24 +1,29 @@
 """
-Same as scripts/train_head.py (frozen BRepNet backbone, kept in .eval()
-mode throughout -- see that script's comments on why -- new 16-class
-head trained with Adam scoped only to classification_layer, same
-400/100 train/val split, same 15 epochs), except the cross-entropy loss
-is class-weighted: weight_c inversely proportional to class c's face
-count in the TRAINING split, using the standard "balanced" formula
+HISTORICAL (500-file, class-weighted experiment) -- not the canonical
+pipeline. See scripts/train_head.py (--suffix C --epochs 40
+--hidden-size 128 --save-best) for the accepted result. Kept for
+reference/reproducibility only.
+
+Same as experiments/500_unweighted/train_head.py (frozen BRepNet
+backbone, kept in .eval() mode throughout, new 16-class head trained
+with Adam scoped only to classification_layer, same 400/100 train/val
+split, same 15 epochs), except the cross-entropy loss is class-weighted:
+weight_c inversely proportional to class c's face count in the
+TRAINING split, using the standard "balanced" formula
 weight_c = n_train_faces / (num_classes * count_c).
 
-Motivation: the unweighted run (outputs/mfcad_head_checkpoint.pt)
-collapsed onto ~4-5 of 16 classes (dominated by "stock" at ~30% of
-faces), leaving 8 classes at 0% recall, 7 of them never predicted at
-all -- see scripts/report_per_class_stats.py's output. Class weighting
-penalizes misclassifying rare classes more heavily, which should push
-the head to actually use its rare-class logits instead of ignoring them.
+Motivation: the unweighted run collapsed onto ~4-5 of 16 classes
+(dominated by "stock" at ~30% of faces), leaving 8 classes at 0%
+recall, 7 of them never predicted at all. Class weighting penalizes
+misclassifying rare classes more heavily, which should push the head
+to actually use its rare-class logits instead of ignoring them.
 
-Saves to a SEPARATE checkpoint (outputs/mfcad_head_checkpoint_class_weighted.pt)
-so the unweighted baseline stays intact for direct comparison.
+Saves to a SEPARATE checkpoint (checkpoint.pt, in this same folder) so
+the unweighted baseline (experiments/500_unweighted/checkpoint.pt)
+stays intact for direct comparison.
 
 Run with the `brepnet` conda environment's python:
-    <path to conda>/envs/brepnet/python.exe scripts/train_head_class_weighted.py
+    <path to conda>/envs/brepnet/python.exe experiments/500_class_weighted/train_head_class_weighted.py
 """
 
 import json
@@ -32,24 +37,24 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BREPNET_DIR = PROJECT_ROOT / "external" / "BRepNet"
 sys.path.insert(0, str(BREPNET_DIR))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 FEATURES_DIR = PROJECT_ROOT / "outputs" / "brepnet_features"
 LABELS_CACHE_DIR = PROJECT_ROOT / "outputs" / "mfcad_labels_cache"
-SUBSET_LIST = PROJECT_ROOT / "outputs" / "mfcad_subset.txt"
+SUBSET_LIST = PROJECT_ROOT / "experiments" / "500_shared_data_prep" / "mfcad_subset.txt"
 FEATURE_STANDARDIZATION_PATH = (
     BREPNET_DIR / "example_files" / "feature_standardization" / "s2.0.0_step_all_features.json"
 )
 KERNEL_PATH = BREPNET_DIR / "kernels" / "winged_edge.json"
 INPUT_FEATURES_PATH = BREPNET_DIR / "feature_lists" / "all.json"
 
-# Same split file as train_head.py -- reused, not regenerated, so the
-# train/val split is identical between the two runs.
-SPLIT_DATASET_FILE_PATH = PROJECT_ROOT / "outputs" / "mfcad_train_val_split.json"
-CHECKPOINT_PATH = PROJECT_ROOT / "outputs" / "mfcad_head_checkpoint_class_weighted.pt"
+# Same split file as experiments/500_unweighted/train_head.py -- reused,
+# not regenerated, so the train/val split is identical between the two runs.
+SPLIT_DATASET_FILE_PATH = PROJECT_ROOT / "experiments" / "500_shared_data_prep" / "mfcad_train_val_split.json"
+CHECKPOINT_PATH = Path(__file__).resolve().parent / "checkpoint.pt"
 
 NUM_MFCAD_CLASSES = 16
 N_TRAIN = 400
