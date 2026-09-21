@@ -84,10 +84,32 @@ def _build_opts(num_classes: int):
     )
 
 
-def load_frozen_backbone_with_new_head(num_classes: int, checkpoint_path: Path = PRETRAINED_CHECKPOINT) -> BRepNet:
+def load_frozen_backbone_with_new_head(
+    num_classes: int,
+    checkpoint_path: Path = PRETRAINED_CHECKPOINT,
+    hidden_size: int | None = None,
+    dropout: float | None = None,
+) -> BRepNet:
     """
     Returns a BRepNet model with the pretrained backbone frozen and a
     fresh, trainable classification_layer sized for `num_classes`.
+
+    hidden_size=None (default): classification_layer is a plain
+    nn.Linear(in_features, num_classes), as before.
+
+    hidden_size=<int>: classification_layer becomes a small MLP --
+    nn.Sequential(nn.Linear(in_features, hidden_size), nn.ReLU(),
+    nn.Linear(hidden_size, num_classes)) -- still attached under the
+    same `classification_layer` attribute name, so every downstream
+    script that does model.classification_layer.parameters() /
+    model.classification_layer(face_embeddings) keeps working
+    unchanged regardless of which head shape is loaded.
+
+    dropout=<float>: only meaningful when hidden_size is also set --
+    inserts nn.Dropout(dropout) after the hidden layer's ReLU, before
+    the final Linear: Linear(in, hidden) -> ReLU -> Dropout(p) ->
+    Linear(hidden, num_classes). None/0.0 means no dropout (default,
+    matches the original MLP head).
     """
     opts = _build_opts(ORIGINAL_NUM_CLASSES)
     model = BRepNet.load_from_checkpoint(str(checkpoint_path), opts=opts)
@@ -96,6 +118,13 @@ def load_frozen_backbone_with_new_head(num_classes: int, checkpoint_path: Path =
         param.requires_grad = False
 
     in_features = model.classification_layer.in_features
-    model.classification_layer = nn.Linear(in_features, num_classes)
+    if hidden_size is None:
+        model.classification_layer = nn.Linear(in_features, num_classes)
+    else:
+        layers = [nn.Linear(in_features, hidden_size), nn.ReLU()]
+        if dropout:
+            layers.append(nn.Dropout(dropout))
+        layers.append(nn.Linear(hidden_size, num_classes))
+        model.classification_layer = nn.Sequential(*layers)
 
     return model
