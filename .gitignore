@@ -1,8 +1,11 @@
 .venv/
 __pycache__/
 *.pyc
-data/
+/data/
+/external/
 outputs/*.npy
 outputs/*.json
 outputs/*.ckpt
+outputs/brepnet_features/
+outputs/brepnet_subset_step/
 .ipynb_checkpoints/
