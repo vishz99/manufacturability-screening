@@ -1,0 +1,12 @@
+name: occwl_dev
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.12
+  - numpy
+  - pythonocc-core=7.9.3
+  - networkx
+  - wxPython
+  - pydeprecate

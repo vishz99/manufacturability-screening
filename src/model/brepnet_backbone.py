@@ -21,7 +21,7 @@ Loading strategy:
      default to requires_grad=True, so this new head is trainable.
 
 Requires the `occwl` / `pythonocc-core` / pytorch_lightning stack (the
-`brepnet` conda environment), not this project's own .venv.
+`brepnet` conda environment, this project's only environment).
 """
 
 from __future__ import annotations

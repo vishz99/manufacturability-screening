@@ -1,0 +1,4 @@
+# This project does not use pip requirements. Its single environment is the
+# `brepnet` conda environment -- see environment.yml (and the "Environment"
+# section of README.md, including the separate occwl install step).
+# This file is intentionally empty of packages.

@@ -17,7 +17,7 @@ len(labels) and a clean set of names == {0, ..., N-1} for a single-solid
 file. So this loader always aligns by embedded name, never by position.
 
 Requires the `occwl` / `pythonocc-core` stack (the `brepnet` conda
-environment), not this project's own .venv.
+environment, this project's only environment).
 """
 
 from __future__ import annotations
