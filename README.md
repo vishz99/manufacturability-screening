@@ -43,19 +43,43 @@ Not verified: `environment.yml` has been checked to parse and to match the insta
 
 ## Usage
 
-Analyze one STEP file from the command line:
+Activate the `brepnet` environment first:
 
 ```
-python scripts/analyse_part.py <step_path> [--threshold 0.5] [--json] [--use-ground-truth]
+conda activate brepnet
 ```
 
-`--use-ground-truth` compares against MFCAD's true labels, when the file has a sibling `.face_truth` (true for MFCAD files, never for an arbitrary upload).
-
-Run the interactive app:
+Reproduce the accepted result end to end (already done; only needed again if the MFCAD subset or training setup changes):
 
 ```
-python -m streamlit run app.py
+python scripts/build_subset.py
+python scripts/extract_features.py
+python scripts/cache_labels.py
+python scripts/train_head.py --suffix C --epochs 40 --hidden-size 128 --save-best
+python scripts/report_per_class_stats.py outputs/final/mfcad_segmentation_head.pt
 ```
+
+Analyze a validation-split part, comparing against its true labels:
+
+```
+python scripts/analyse_part.py data/MFCAD/dataset/step/<stem>.step --use-ground-truth
+```
+
+Analyze a new STEP file not in MFCAD:
+
+```
+python scripts/analyse_part.py path/to/new_part.step [--threshold 0.5] [--json]
+```
+
+Run the app:
+
+```
+streamlit run app.py
+```
+
+![App screenshot: a validation part colored by predicted feature class, with the per-feature summary table and manufacturability flags table alongside it](docs/images/app-screenshot.png)
+
+*Example: a validation part (`0-0-0-2-19`) colored by predicted class, with the predicted-feature summary and the resulting manufacturability flags beside it. Sidebar controls pick the part, toggle prediction/ground-truth coloring, and set the confidence threshold for flags.*
 
 Run the tests:
 
