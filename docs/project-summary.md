@@ -52,6 +52,23 @@ This project spent real effort chasing a specific problem — the MLP head's tra
 - `experiments/` — every other variant tried, each with its own checkpoint, training curve, and a short verdict, plus `experiments/EXPERIMENT_LOG.md` summarizing all of it in one table.
 - `outputs/final/` — the one accepted checkpoint, its full training history, and its per-class report.
 
+## Screening and UI
+
+Built on top of the accepted result: prediction on new STEP files, rule-based manufacturability flags, and a Streamlit app for interactive inspection.
+
+- **New-part prediction** (`src/inference/predict_part.py`): runs the accepted checkpoint on an arbitrary STEP file. A malformed STEP file can crash pythonocc outright, not just raise a Python exception, so extraction, tessellation, and the face-adjacency graph all run in a subprocess (`src/inference/_extract_worker.py`); the main process only reads back plain arrays and a JSON edge list. A new part is standardized with the original training feature statistics, never statistics computed from the part itself.
+- **Feature summary** (`src/inference/part_summary.py`): per class, face count, an approximate instance count (same-predicted-class faces that are adjacent are grouped via occwl's face-adjacency graph), mean confidence, and a reliability label (low/medium/high) read from the accepted checkpoint's own per-class validation recall.
+- **Rules** (`src/screening/rules.py`): a fixed table covering all 16 MFCAD classes -- blind features flagged for depth control, pockets and blind slots flagged for internal corner radius, triangular/6-sided profiles flagged for acute corners, slanted/2-sided through-steps flagged for multi-axis setup, plain through-features and chamfer marked informational, stock unflagged. A flag fires when at least one face of that class is predicted at or above a confidence threshold (default 0.5, adjustable in the app). Classes the model is known to be unreliable on get their flag worded "possible" rather than stated outright.
+- **App** (`app.py`): pick a validation-split part or upload a STEP file, see a colored 3D view (prediction or, for validation parts, ground truth for comparison), the feature summary table, and the flags.
+
+**Verified, not assumed**: the single-file prediction pipeline was checked against the full validation split (`notebooks/check_predict_part_accuracy.py`) to confirm it reproduces the accepted checkpoint's ~0.6035 accuracy -- a gap here would mean the new pipeline's feature standardization or face ordering silently differs from the training pipeline's.
+
+**Limitations, stated plainly:**
+
+- Face-level accuracy is still 60%, the same proof-of-concept-grade result described above -- the screening layer doesn't improve on it, only exposes it as flags.
+- Flags are feature-type checks only, with no dimensional or tolerance analysis (no actual tool-radius, depth, or clearance values are computed).
+- Instance counts are approximate: faces of the same class are grouped only by geometric adjacency, which can under- or over-count real feature instances.
+
 ## Possible next steps (not started)
 
 - Fine-tune some backbone layers now that a working head/loss/data pipeline exists, rather than always freezing the whole backbone.
