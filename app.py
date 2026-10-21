@@ -3,6 +3,11 @@ Streamlit app: upload a STEP file (or pick a validation-split part),
 see the accepted model's per-face predictions as a colored 3D view,
 the feature summary table, and rule-based manufacturability flags.
 
+Layout is a single row of three columns (viewer, summary, flags) kept
+to a fixed, modest height each, so the whole page fits one screen
+without scrolling -- the legend and disclaimer are collapsed into
+expanders/captions rather than stacked below.
+
 Proof-of-concept grade: see docs/project-summary.md for the real
 accuracy (60.35% validation) and its limitations before relying on this
 for anything beyond a demo.
@@ -30,11 +35,13 @@ from ui.viewer import build_mesh_figure, legend_html  # noqa: E402
 STEP_DIR = PROJECT_ROOT / "data" / "MFCAD" / "dataset" / "step"
 SPLIT_PATH = PROJECT_ROOT / "outputs" / "mfcad_train_val_split.json"
 
+TABLE_HEIGHT = 300  # fixed, so neither table grows the page past one screen
+
 st.set_page_config(page_title="Manufacturability Screening", layout="wide")
-st.title("Manufacturability Screening")
-st.caption(
-    "Proof-of-concept grade (60.35% face accuracy). See docs/project-summary.md "
-    "for the full result and its limitations before relying on this for anything beyond a demo."
+st.markdown(
+    "##### Manufacturability Screening &nbsp;"
+    "<span style='font-size:0.75em;color:gray'>proof-of-concept, 60.35% face accuracy -- see docs/project-summary.md</span>",
+    unsafe_allow_html=True,
 )
 
 
@@ -61,11 +68,13 @@ with st.sidebar:
         if uploaded is not None:
             uploaded_bytes = uploaded.getvalue()
 
-    st.header("Settings")
     confidence_threshold = st.slider(
         "Confidence threshold for flags", min_value=0.3, max_value=0.9,
         value=DEFAULT_CONFIDENCE_THRESHOLD, step=0.05,
     )
+
+    with st.expander("Class colour legend"):
+        st.markdown(legend_html(FEAT_NAMES), unsafe_allow_html=True)
 
 
 def _run_analysis(path: Path, threshold: float):
@@ -95,7 +104,7 @@ if error:
     st.error(error)
 
 if analysis is not None:
-    col_viewer, col_info = st.columns([2, 1])
+    col_viewer, col_summary, col_flags = st.columns([3, 2, 2])
 
     with col_viewer:
         if source == "Validation part" and color_source == "Ground truth" and analysis.ground_truth is not None:
@@ -118,43 +127,46 @@ if analysis is not None:
             title=title,
         )
         st.plotly_chart(fig, use_container_width=True)
-        st.markdown(legend_html(FEAT_NAMES), unsafe_allow_html=True)
-
-    with col_info:
-        st.subheader("Summary")
-        st.write(f"Faces: {analysis.prediction.num_faces}")
+        faces_line = f"Faces: {analysis.prediction.num_faces}"
         if analysis.accuracy is not None:
-            st.write(f"Accuracy vs. ground truth: {analysis.accuracy:.4f}")
+            faces_line += f"   |   Accuracy vs. ground truth: {analysis.accuracy:.4f}"
+        st.caption(faces_line)
 
-        st.subheader("Predicted features")
+    with col_summary:
+        st.markdown("**Predicted features**")
         st.dataframe(
             [
                 {
                     "class": s.class_name,
                     "faces": s.face_count,
-                    "instances (approx.)": s.instance_count if s.instance_count is not None else "n/a",
-                    "mean confidence": f"{s.mean_confidence:.2f}" if s.mean_confidence is not None else "n/a",
+                    "inst.": s.instance_count if s.instance_count is not None else "n/a",
+                    "conf.": f"{s.mean_confidence:.2f}" if s.mean_confidence is not None else "n/a",
                     "reliability": s.reliability,
                 }
                 for s in analysis.predicted_summary
             ],
             use_container_width=True,
             hide_index=True,
+            height=TABLE_HEIGHT,
         )
 
-    st.subheader("Manufacturability flags")
-    review_flags = [f for f in analysis.flags if f.severity == "review"]
-    info_flags = [f for f in analysis.flags if f.severity == "info"]
-
-    if review_flags:
-        st.markdown("**Review**")
-        for f in review_flags:
-            st.warning(f"{f.class_name}: {f.message} (reliability: {f.reliability})")
-    if info_flags:
-        st.markdown("**Info**")
-        for f in info_flags:
-            st.info(f"{f.class_name}: {f.message} (reliability: {f.reliability})")
-    if not review_flags and not info_flags:
-        st.write("No flags for the current confidence threshold.")
-
-    st.caption(DISCLAIMER)
+    with col_flags:
+        st.markdown("**Manufacturability flags**")
+        if analysis.flags:
+            st.dataframe(
+                [
+                    {
+                        "severity": f.severity,
+                        "class": f.class_name,
+                        "flag": f.message,
+                        "reliability": f.reliability,
+                    }
+                    for f in sorted(analysis.flags, key=lambda f: (f.severity != "review", f.class_name))
+                ],
+                use_container_width=True,
+                hide_index=True,
+                height=TABLE_HEIGHT,
+            )
+        else:
+            st.write("No flags for the current confidence threshold.")
+        st.caption(DISCLAIMER)

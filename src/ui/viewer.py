@@ -57,13 +57,17 @@ def build_mesh_figure(
     confidence_per_face: Optional[Sequence[float]] = None,
     confidence_threshold: float = 0.5,
     title: str = "",
+    height: int = 420,
 ) -> go.Figure:
     """Builds one Mesh3d figure, triangles colored by class_per_face
     (greyed out below confidence_threshold if confidence_per_face is
-    given -- pass None, e.g. for ground truth, to disable greying)."""
+    given -- pass None, e.g. for ground truth, to disable greying).
+    height is capped by default (420px) so the figure fits one screen
+    alongside the summary table and flags, rather than pushing the page
+    past the viewport."""
     if len(tess_tris) == 0:
         fig = go.Figure()
-        fig.update_layout(title=title or "No tessellation available")
+        fig.update_layout(title=title or "No tessellation available", height=height)
         return fig
 
     colors = _triangle_colors(tess_face_of_tri, class_per_face, confidence_per_face, confidence_threshold)
@@ -78,12 +82,13 @@ def build_mesh_figure(
     )
     fig = go.Figure(data=[mesh])
     fig.update_layout(
-        title=title,
+        title=dict(text=title, y=0.98, pad=dict(t=0)),
         scene=dict(
             aspectmode="data",
             xaxis=dict(visible=False), yaxis=dict(visible=False), zaxis=dict(visible=False),
         ),
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=dict(l=0, r=0, t=24, b=0),
+        height=height,
     )
     return fig
 
